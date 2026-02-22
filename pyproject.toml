@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+
+[tool.pytest.ini_options]
+addopts = "-ra"
+markers = [
+  "integration: tests that require docker compose",
+  "chaos: chaos/disruption tests for distributed behavior",
+]
+pythonpath = [
+  ".",
+  "libs/common",
+]
+testpaths = [
+  "tests",
+]

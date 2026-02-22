@@ -1,0 +1,52 @@
+services:
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  gateway:
+    build:
+      context: .
+      dockerfile: services/gateway/Dockerfile
+    environment:
+      REDIS_URL: "${REDIS_URL:-redis://redis:6379/0}"
+      REQUEST_QUEUE_KEY: "${REQUEST_QUEUE_KEY:-inference:queue}"
+      RESPONSE_CHANNEL_PREFIX: "${RESPONSE_CHANNEL_PREFIX:-inference:response:}"
+      QUEUE_MAX_DEPTH: "${QUEUE_MAX_DEPTH:-1000}"
+      REQUEST_TIMEOUT_SECONDS: "${REQUEST_TIMEOUT_SECONDS:-30}"
+      RATE_LIMIT_REQUESTS: "${RATE_LIMIT_REQUESTS:-120}"
+      RATE_LIMIT_WINDOW_SECONDS: "${RATE_LIMIT_WINDOW_SECONDS:-60}"
+      GATEWAY_API_KEY: "${GATEWAY_API_KEY:-}"
+    ports:
+      - "8000:8000"
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  worker:
+    build:
+      context: .
+      dockerfile: services/worker/Dockerfile
+    environment:
+      REDIS_URL: "${REDIS_URL:-redis://redis:6379/0}"
+      REQUEST_QUEUE_KEY: "${REQUEST_QUEUE_KEY:-inference:queue}"
+      RESPONSE_CHANNEL_PREFIX: "${RESPONSE_CHANNEL_PREFIX:-inference:response:}"
+      BATCH_WINDOW_MS: "${BATCH_WINDOW_MS:-20}"
+      MAX_BATCH_SIZE: "${MAX_BATCH_SIZE:-16}"
+      MAX_PENDING_ITEMS: "${MAX_PENDING_ITEMS:-2000}"
+      MAX_CONCURRENT_BATCHES: "${MAX_CONCURRENT_BATCHES:-4}"
+      MOCK_TOKEN_DELAY_SECONDS: "${MOCK_TOKEN_DELAY_SECONDS:-0.02}"
+      WORKER_METRICS_PORT: "${WORKER_METRICS_PORT:-9100}"
+    ports:
+      - "9100:9100"
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped

@@ -1,0 +1,25 @@
+{
+  "timestamp_utc": "2026-02-22T22:58:23.070322+00:00",
+  "mode": "real",
+  "config": {
+    "url": "http://localhost:8000/v1/generate",
+    "concurrency": 50,
+    "warmup": 25,
+    "stream": true,
+    "max_tokens": 64,
+    "temperature": 0.7
+  },
+  "requests_total": 500,
+  "requests_success": 0,
+  "requests_failed": 500,
+  "elapsed_seconds": 0.1529,
+  "throughput_rps": 0.0,
+  "token_throughput_tps": 0.0,
+  "latency_seconds": {
+    "mean": 0.0,
+    "p50": 0.0,
+    "p95": 0.0,
+    "p99": 0.0,
+    "max": 0.0
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "timestamp_utc": "2026-02-22T22:46:32.189545+00:00",
+  "mode": "synthetic",
+  "config": {
+    "seed": 42,
+    "concurrency": 60,
+    "stream": true,
+    "max_tokens": 64
+  },
+  "requests_total": 600,
+  "requests_success": 600,
+  "requests_failed": 0,
+  "elapsed_seconds": 1.4454,
+  "throughput_rps": 415.1138,
+  "token_throughput_tps": 26567.2859,
+  "latency_seconds": {
+    "mean": 0.144539,
+    "p50": 0.138976,
+    "p95": 0.206259,
+    "p99": 0.342013,
+    "max": 0.445071
+  }
+}

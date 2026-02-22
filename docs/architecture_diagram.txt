@@ -1,0 +1,42 @@
+LLM Serving Platform - ASCII Architecture Diagram
+
+                          +---------------------------+
+                          |        Client / SDK       |
+                          +-------------+-------------+
+                                        |
+                                        | POST /v1/generate
+                                        | stream=true/false
+                                        v
+                     +----------------------------------------+
+                     | Gateway Service (FastAPI / Uvicorn)   |
+                     | - Request validation                   |
+                     | - API key auth (optional)             |
+                     | - IP/API-key rate limiting            |
+                     | - Queue overload protection (429)      |
+                     | - SSE relay                            |
+                     | - Prometheus metrics + JSON logs       |
+                     +-------------------+--------------------+
+                                         |
+                                         | RPUSH inference:queue
+                                         v
+                              +----------------------+
+                              | Redis                |
+                              | - Request queue      |
+                              | - Pub/Sub channels   |
+                              +----------+-----------+
+                                         ^
+                                         | PUBLISH inference:response:<request_id>
+                     +-------------------+--------------------+
+                     | Worker Service                           |
+                     | - BLPOP queue polling                    |
+                     | - Batch scheduler by (model,max_tokens) |
+                     | - Microbatch window (10-30ms)           |
+                     | - Mock pluggable backend                |
+                     | - Token-by-token publish                |
+                     +-------------------+--------------------+
+                                         |
+                                         | /metrics
+                                         v
+                          +---------------------------+
+                          | Prometheus / Scraper      |
+                          +---------------------------+
