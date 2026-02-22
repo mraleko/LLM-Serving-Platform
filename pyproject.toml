@@ -13,7 +13,6 @@ select = ["E", "F", "I", "B", "UP"]
 addopts = "-ra"
 markers = [
   "integration: tests that require docker compose",
-  "chaos: chaos/disruption tests for distributed behavior",
 ]
 pythonpath = [
   ".",

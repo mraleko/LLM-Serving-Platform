@@ -5,7 +5,7 @@ Production-style local LLM serving stack with:
 - Worker service with Redis queue consumption, micro-batching, and pluggable token backend
 - Shared schemas/logging/retry utilities in `libs/common`
 - Docker Compose local runtime
-- Unit, integration, and chaos tests
+- Unit and integration tests
 
 ## ASCII Diagram
 
@@ -55,7 +55,7 @@ services/gateway/        # FastAPI gateway
 services/worker/         # batching scheduler + inference worker
 libs/common/             # shared schemas, logging, metrics, retry utils
 scripts/                 # demo, load test, benchmark
-tests/                   # unit + integration + chaos tests
+tests/                   # unit + integration tests
 docs/                    # architecture diagram
 artifacts/benchmark/     # benchmark result artifacts
 docker-compose.yml
@@ -140,23 +140,6 @@ Latest checked-in summary:
 
 Note: these checked-in values come from synthetic fallback mode because this sandbox lacks Docker/Redis runtime.
 
-## Chaos Test (Distributed Behavior)
-
-Chaos test file: `tests/integration/test_chaos_worker_restart.py`
-
-What it does:
-- Starts stack via docker compose
-- Opens streaming request
-- Kills worker during in-flight stream (`docker compose kill worker`)
-- Restarts worker
-- Verifies the system recovers and serves a new streaming request with multiple tokens
-
-Run:
-
-```bash
-make test-chaos
-```
-
 ## Security + Reliability
 
 - Optional API key (`X-API-Key`) via `GATEWAY_API_KEY`
@@ -198,19 +181,12 @@ Integration:
 make test-integration
 ```
 
-Chaos:
-
-```bash
-make test-chaos
-```
-
 ## Make Targets
 
 - `make fmt`
 - `make lint`
 - `make test`
 - `make test-integration`
-- `make test-chaos`
 - `make run`
 - `make loadtest`
 - `make benchmark`

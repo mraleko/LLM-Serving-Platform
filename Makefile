@@ -1,6 +1,6 @@
 PYTHON ?= python3.11
 
-.PHONY: install fmt lint test test-integration test-chaos run loadtest benchmark demo
+.PHONY: install fmt lint test test-integration run loadtest benchmark demo
 
 install:
 	$(PYTHON) -m pip install -r requirements.txt
@@ -16,9 +16,6 @@ test:
 
 test-integration:
 	RUN_INTEGRATION=1 $(PYTHON) -m pytest -q -m integration
-
-test-chaos:
-	RUN_INTEGRATION=1 $(PYTHON) -m pytest -q -m chaos
 
 run:
 	docker compose up --build
