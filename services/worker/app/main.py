@@ -13,8 +13,8 @@ from common.logging import configure_logging
 from common.metrics import WorkerMetrics
 from common.redis_utils import with_retries
 from common.schemas import RequestEnvelope, WorkerEvent
+from services.worker.app.backends import TokenBackend, build_backend
 from services.worker.app.config import WorkerSettings, load_settings
-from services.worker.app.mock_backend import MockTokenBackend
 from services.worker.app.scheduler import BatchScheduler, SchedulerBackpressureError
 
 
@@ -30,7 +30,7 @@ class WorkerService:
             max_batch_size=settings.max_batch_size,
             max_pending_items=settings.max_pending_items,
         )
-        self._backend = MockTokenBackend(token_delay_seconds=settings.mock_token_delay_seconds)
+        self._backend: TokenBackend = build_backend(settings, self._logger)
         self._metrics = WorkerMetrics()
         self._batch_semaphore = asyncio.Semaphore(settings.max_concurrent_batches)
         self._tasks: set[asyncio.Task[None]] = set()
@@ -43,6 +43,7 @@ class WorkerService:
             extra={
                 "batch_window_ms": self._settings.batch_window_ms,
                 "max_batch_size": self._settings.max_batch_size,
+                "backend_provider": self._settings.backend_provider,
                 "metrics_port": self._settings.metrics_port,
             },
         )
@@ -234,6 +235,7 @@ class WorkerService:
         redis_client = self._redis
         if redis_client is not None:
             await redis_client.aclose()
+        await self._backend.aclose()
         self._logger.info("worker stopped")
 
     def _register_signal_handlers(

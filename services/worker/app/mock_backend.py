@@ -36,6 +36,9 @@ class MockTokenBackend:
                 yield request, index, self._build_token(request.prompt, index, request.temperature)
             await asyncio.sleep(self._token_delay_seconds)
 
+    async def aclose(self) -> None:
+        return None
+
     def _build_token(self, prompt: str, index: int, temperature: float) -> str:
         seed = int(hashlib.sha256(prompt.encode("utf-8")).hexdigest(), 16)
         vocab_index = (seed + index) % len(_VOCAB)

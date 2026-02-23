@@ -2,7 +2,7 @@
 
 Production-style local LLM serving stack with:
 - Gateway API (`FastAPI`) with SSE streaming, rate limiting, backpressure, and Prometheus metrics
-- Worker service with Redis queue consumption, micro-batching, and pluggable token backend
+- Worker service with Redis queue consumption, micro-batching, and pluggable token backend (`mock`, `openai`, `anthropic`)
 - Shared schemas/logging/retry utilities in `libs/common`
 - Docker Compose local runtime
 - Unit and integration tests
@@ -20,10 +20,10 @@ Architecture file: `docs/architecture_diagram.txt`
                                         | stream=true/false
                                         v
                      +----------------------------------------+
-                     | Gateway Service (FastAPI / Uvicorn)   |
+                     | Gateway Service (FastAPI / Uvicorn)    |
                      | - Request validation                   |
-                     | - API key auth (optional)             |
-                     | - IP/API-key rate limiting            |
+                     | - API key auth (optional)              |
+                     | - IP/API-key rate limiting             |
                      | - Queue overload protection (429)      |
                      | - SSE relay                            |
                      | - Prometheus metrics + JSON logs       |
@@ -38,14 +38,14 @@ Architecture file: `docs/architecture_diagram.txt`
                               +----------+-----------+
                                          ^
                                          | PUBLISH inference:response:<request_id>
-                     +-------------------+--------------------+
-                     | Worker Service                           |
-                     | - BLPOP queue polling                    |
+                     +-------------------+---------------------+
+                     | Worker Service                          |
+                     | - BLPOP queue polling                   |
                      | - Batch scheduler by (model,max_tokens) |
                      | - Microbatch window (10-30ms)           |
-                     | - Mock pluggable backend                |
+                     | - Pluggable backend                     |
                      | - Token-by-token publish                |
-                     +-------------------+--------------------+
+                     +-------------------+---------------------+
 ```
 
 ## Repo Layout
@@ -94,6 +94,38 @@ docker compose up --build
 
 Gateway: `http://localhost:8000`  
 Worker metrics: `http://localhost:9100/metrics`
+
+## Inference Backends
+
+Worker backend is selected with:
+
+```bash
+WORKER_BACKEND_PROVIDER=mock|openai|anthropic
+```
+
+Supported adapters:
+- `mock`: deterministic local token simulator (default)
+- `openai`: OpenAI-compatible chat completions streaming endpoint
+- `anthropic`: Anthropic messages streaming endpoint
+
+Provider env vars:
+
+```bash
+PROVIDER_TIMEOUT_SECONDS=60
+
+OPENAI_API_KEY=...
+OPENAI_BASE_URL=https://api.openai.com
+OPENAI_DEFAULT_MODEL=gpt-4o-mini
+
+ANTHROPIC_API_KEY=...
+ANTHROPIC_BASE_URL=https://api.anthropic.com
+ANTHROPIC_VERSION=2023-06-01
+ANTHROPIC_DEFAULT_MODEL=claude-3-5-haiku-latest
+```
+
+Model resolution:
+- If request `model` is set (and not `mock-v1`), the worker uses that model name.
+- Otherwise provider-specific default model env var is used.
 
 ## Clean Demo Command (One-Liner)
 
@@ -203,4 +235,4 @@ Cheap Redis ops and easy operability; boundary bursts are possible versus token-
 4. Gateway-local rolling p50/p95/p99 gauges:
 Fast and dependency-free; quantiles are per-instance approximations, not globally exact across replicas.
 5. Mock model backend by default:
-Fast to run and test locally; does not reflect true model runtime memory/compute behavior until real backend is plugged in.
+Fast to run and test locally; real provider adapters are included but rely on external API SLAs/cost/limits.

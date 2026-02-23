@@ -26,6 +26,14 @@ def _env_float(name: str, default: float) -> float:
         return default
 
 
+def _env_optional(name: str) -> str | None:
+    raw = os.getenv(name)
+    if raw is None:
+        return None
+    value = raw.strip()
+    return value or None
+
+
 @dataclass(frozen=True)
 class WorkerSettings:
     service_name: str
@@ -38,6 +46,15 @@ class WorkerSettings:
     max_pending_items: int
     max_concurrent_batches: int
     mock_token_delay_seconds: float
+    backend_provider: str
+    provider_timeout_seconds: float
+    openai_api_key: str | None
+    openai_base_url: str
+    openai_default_model: str
+    anthropic_api_key: str | None
+    anthropic_base_url: str
+    anthropic_version: str
+    anthropic_default_model: str
     retry_attempts: int
     retry_base_delay_seconds: float
     retry_max_delay_seconds: float
@@ -65,6 +82,17 @@ def load_settings() -> WorkerSettings:
         max_pending_items=_env_int("MAX_PENDING_ITEMS", 2000),
         max_concurrent_batches=_env_int("MAX_CONCURRENT_BATCHES", 4),
         mock_token_delay_seconds=_env_float("MOCK_TOKEN_DELAY_SECONDS", 0.02),
+        backend_provider=os.getenv("WORKER_BACKEND_PROVIDER", "mock"),
+        provider_timeout_seconds=_env_float("PROVIDER_TIMEOUT_SECONDS", 60.0),
+        openai_api_key=_env_optional("OPENAI_API_KEY"),
+        openai_base_url=os.getenv("OPENAI_BASE_URL", "https://api.openai.com"),
+        openai_default_model=os.getenv("OPENAI_DEFAULT_MODEL", "gpt-4o-mini"),
+        anthropic_api_key=_env_optional("ANTHROPIC_API_KEY"),
+        anthropic_base_url=os.getenv("ANTHROPIC_BASE_URL", "https://api.anthropic.com"),
+        anthropic_version=os.getenv("ANTHROPIC_VERSION", "2023-06-01"),
+        anthropic_default_model=os.getenv(
+            "ANTHROPIC_DEFAULT_MODEL", "claude-3-5-haiku-latest"
+        ),
         retry_attempts=_env_int("INTERNAL_RETRY_ATTEMPTS", 3),
         retry_base_delay_seconds=_env_float("INTERNAL_RETRY_BASE_DELAY_SECONDS", 0.02),
         retry_max_delay_seconds=_env_float("INTERNAL_RETRY_MAX_DELAY_SECONDS", 0.2),
