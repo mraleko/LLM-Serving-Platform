@@ -185,7 +185,9 @@ class WorkerService:
                     "batch failed",
                     extra={"batch_size": batch_size, "error": str(exc)},
                 )
-                await self._publish_errors(batch, "worker batch processing failed")
+                await self._publish_errors(
+                    batch, f"worker batch processing failed: {str(exc)[:1000]}"
+                )
 
     async def _publish_errors(self, batch: Iterable[RequestEnvelope], message: str) -> None:
         for request in batch:

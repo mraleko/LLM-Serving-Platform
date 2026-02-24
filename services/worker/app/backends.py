@@ -123,7 +123,8 @@ class _HttpSseBackend(ABC):
                     continue
                 if isinstance(event, _QueueErrorEvent):
                     raise RuntimeError(
-                        f"provider request failed for request_id={event.request.request_id}"
+                        "provider request failed for "
+                        f"request_id={event.request.request_id}: {event.error}"
                     ) from event.error
                 yield event.request, event.index, event.token
         finally:
@@ -191,7 +192,12 @@ class OpenAITokenBackend(_HttpSseBackend):
             json=payload,
             headers=headers,
         ) as response:
-            response.raise_for_status()
+            if response.status_code >= 400:
+                body = (await response.aread()).decode("utf-8", errors="replace").strip()
+                detail = body[:800] if body else "<empty body>"
+                raise RuntimeError(
+                    f"openai provider HTTP {response.status_code}: {detail}"
+                )
             async for line in response.aiter_lines():
                 if not line or not line.startswith("data:"):
                     continue
@@ -240,7 +246,12 @@ class AnthropicTokenBackend(_HttpSseBackend):
             json=payload,
             headers=headers,
         ) as response:
-            response.raise_for_status()
+            if response.status_code >= 400:
+                body = (await response.aread()).decode("utf-8", errors="replace").strip()
+                detail = body[:800] if body else "<empty body>"
+                raise RuntimeError(
+                    f"anthropic provider HTTP {response.status_code}: {detail}"
+                )
             async for line in response.aiter_lines():
                 if not line or not line.startswith("data:"):
                     continue
